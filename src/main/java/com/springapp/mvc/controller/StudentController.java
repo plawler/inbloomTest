@@ -1,6 +1,6 @@
-package com.springapp.mvc;
+package com.springapp.mvc.controller;
 
-import org.inbloom.model.student.StudentFactory;
+import com.springapp.mvc.student.StudentFactory;
 import org.slc.sli.api.client.RESTClient;
 import org.slc.sli.api.client.constants.ResourceNames;
 import org.slc.sli.api.client.impl.BasicClient;

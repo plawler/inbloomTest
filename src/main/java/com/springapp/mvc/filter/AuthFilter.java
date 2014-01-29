@@ -1,4 +1,4 @@
-package org.inbloom.filter;
+package com.springapp.mvc.filter;
 
 import org.slc.sli.api.client.RESTClient;
 import org.slc.sli.api.client.SLIClient;

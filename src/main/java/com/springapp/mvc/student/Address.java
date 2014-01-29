@@ -1,4 +1,4 @@
-package org.inbloom.model.student;
+package com.springapp.mvc.student;
 
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;

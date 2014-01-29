@@ -1,4 +1,4 @@
-package org.inbloom.model.student;
+package com.springapp.mvc.student;
 
 import com.google.common.collect.Lists;
 import org.codehaus.jackson.JsonNode;
