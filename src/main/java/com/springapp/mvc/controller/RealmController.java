@@ -1,7 +1,6 @@
 package com.springapp.mvc.controller;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.springapp.mvc.command.RealmSelection;
 import com.springapp.mvc.dto.Realm;
 import org.codehaus.jackson.JsonNode;
@@ -11,17 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.client.RestTemplate;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -34,7 +30,8 @@ import java.util.Map;
 public class RealmController {
 
     private static final Logger log = LoggerFactory.getLogger(RealmController.class);
-    private static final String realmsServiceUrl = "http://localhost:8082/oauth_sample/realms"; // get this from properties
+    private static final String realmsUrl = "http://localhost:8082/oauth_sample/realms"; // get this from properties
+    private static final String idpByRealmUrl = "http://localhost:8082/oauth_sample/idp?realm="; // get this from properties
 
     @RequestMapping(value = "/realms", method = RequestMethod.GET)
     public String getRealms(ModelMap model) {
@@ -43,9 +40,18 @@ public class RealmController {
         return "realms";
     }
 
+    @RequestMapping(value = "/realms", method = RequestMethod.POST)
+    public String selectRealm(@ModelAttribute RealmSelection selection) {
+        log.info("Realm selected is: " + selection.getRealmIdentifier());
+        // todo: implement dynamic idp endppint lookup and redirect to authenticating address
+//        RestTemplate rt = new RestTemplate();
+//        String result = rt.getForObject(idpByRealmUrl, String.class);
+        return "redirect:/";
+    }
+
     private List<Realm> getRealms() {
         RestTemplate rt = new RestTemplate();
-        String result = rt.getForObject(realmsServiceUrl, String.class);
+        String result = rt.getForObject(realmsUrl, String.class);
         try {
             return buildRealmMap(result);
         } catch (IOException e) {
@@ -58,10 +64,12 @@ public class RealmController {
         List<Realm> realms = Lists.newArrayList();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode results = mapper.readTree(json);
+
         Iterator<JsonNode> iterator = results.getElements();
         while (iterator.hasNext()) {
             realms.add((Realm)mapper.readValue(iterator.next(), new TypeReference<Realm>(){}));
         }
+
         return realms;
     }
 }

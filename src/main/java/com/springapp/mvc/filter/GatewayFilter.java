@@ -22,19 +22,27 @@ import java.io.IOException;
 public class GatewayFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(GatewayFilter.class);
+    private static final String REALM_PRESENTATION = "REALM_PRESENTATION";
     private static final String REALM_SELECTION = "REALM_SELECTION";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        log.info("Gateway filter realm selection check");
+
+        log.info("Gateway filter - realm checks");
+
         HttpSession session = request.getSession();
         if (session != null) {
-            if (session.getAttribute(REALM_SELECTION) == null) {
-                session.setAttribute(REALM_SELECTION, true);
+            if (session.getAttribute(REALM_PRESENTATION) == null) {
+                session.setAttribute(REALM_PRESENTATION, true);
                 RequestDispatcher dispatcher = request.getRequestDispatcher("/realms");
                 dispatcher.forward(request, response);
-            } else {
+            } else if (session.getAttribute(REALM_SELECTION) == null) {
+                session.setAttribute(REALM_SELECTION, true);
+                RequestDispatcher dispatcher = request.getRequestDispatcher(request.getServletPath());
+                dispatcher.forward(request, response);
+            }
+            else {
                 filterChain.doFilter(request, response);
             }
         } else {
