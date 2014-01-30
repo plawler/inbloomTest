@@ -24,6 +24,7 @@ public class GatewayFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(GatewayFilter.class);
     private static final String REALM_PRESENTATION = "REALM_PRESENTATION";
     private static final String REALM_SELECTION = "REALM_SELECTION";
+    private static final String OPERATOR_CONNECTION = "OPERATOR_CONNECTION";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -41,12 +42,18 @@ public class GatewayFilter extends OncePerRequestFilter {
                 session.setAttribute(REALM_SELECTION, true);
                 RequestDispatcher dispatcher = request.getRequestDispatcher(request.getServletPath());
                 dispatcher.forward(request, response);
-            }
-            else {
+            } else if (session.getAttribute(OPERATOR_CONNECTION) == null){
+                session.setAttribute(OPERATOR_CONNECTION, true);
+                String apiUrl = (String) request.getSession().getAttribute("apiUrl");
+                log.info("Retrieving the apiUrl: " + apiUrl);
+                request.setAttribute("apiUrl", apiUrl);
+                session.removeAttribute("apiUrl");
+                filterChain.doFilter(request, response);
+            } else {
                 filterChain.doFilter(request, response);
             }
         } else {
-            throw new IllegalStateException("HttpSession is null. Bad.");
+            throw new IllegalStateException("HttpSession is null. Close the browser and log back in."); // todo: redirect to generic app launch page
         }
     }
 

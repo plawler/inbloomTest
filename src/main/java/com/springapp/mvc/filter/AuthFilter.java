@@ -51,9 +51,10 @@ public class AuthFilter implements Filter {
         LOG.info("URI:" + httpRequest.getRequestURI());
 
         if (client == null) {
+            URL api = new URL((String) request.getAttribute("apiUrl"));
             // this use is not authenticat yet
             LOG.info("authenticate");
-            RESTClient restClient = new BasicRESTClient(apiUrl, clientId, clientSecret, callbackUrl);
+            RESTClient restClient = new BasicRESTClient(api, clientId, clientSecret, callbackUrl);
             client = new BasicClient(restClient);
             ((HttpServletResponse) response).sendRedirect(client.getRESTClient().getLoginURL().toExternalForm());
             httpRequest.getSession().setAttribute("client", client);
