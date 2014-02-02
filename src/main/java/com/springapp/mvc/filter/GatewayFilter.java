@@ -1,5 +1,6 @@
 package com.springapp.mvc.filter;
 
+import com.springapp.mvc.dto.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
@@ -44,10 +45,9 @@ public class GatewayFilter extends OncePerRequestFilter {
                 dispatcher.forward(request, response);
             } else if (session.getAttribute(OPERATOR_CONNECTION) == null){
                 session.setAttribute(OPERATOR_CONNECTION, true);
-                String apiUrl = (String) request.getSession().getAttribute("apiUrl");
-                log.info("Retrieving the apiUrl: " + apiUrl);
-                request.setAttribute("apiUrl", apiUrl);
-                session.removeAttribute("apiUrl");
+                Service service = (Service) request.getSession().getAttribute("service");
+                request.setAttribute("service", service);
+                session.removeAttribute("service");
                 filterChain.doFilter(request, response);
             } else {
                 filterChain.doFilter(request, response);

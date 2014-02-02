@@ -1,5 +1,8 @@
 package com.springapp.mvc.filter;
 
+import com.google.common.collect.ImmutableMap;
+import com.springapp.mvc.dto.Service;
+import org.apache.http.client.utils.URIBuilder;
 import org.slc.sli.api.client.RESTClient;
 import org.slc.sli.api.client.SLIClient;
 import org.slc.sli.api.client.impl.BasicClient;
@@ -16,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Properties;
@@ -29,7 +33,7 @@ import java.util.Properties;
  */
 public class AuthFilter implements Filter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AuthFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthFilter.class);
     private static final String CALL_BACK_PATH = "/testapp/";
 
     private String clientId;
@@ -40,7 +44,7 @@ public class AuthFilter implements Filter {
 
     @Override
     public void destroy() {
-        LOG.info("Destroy auth filter");
+        log.info("Destroy auth filter");
     }
 
     @Override
@@ -48,15 +52,19 @@ public class AuthFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         SLIClient client = (SLIClient) httpRequest.getSession().getAttribute("client");
 
-        LOG.info("URI:" + httpRequest.getRequestURI());
+        log.info("URI:" + httpRequest.getRequestURI());
 
         if (client == null) {
-            URL api = new URL((String) request.getAttribute("apiUrl"));
-            // this use is not authenticat yet
-            LOG.info("authenticate");
+            Service service = (Service) request.getAttribute("service");
+            URL api = new URL(service.getUrl());
+
             RESTClient restClient = new BasicRESTClient(api, clientId, clientSecret, callbackUrl);
             client = new BasicClient(restClient);
-            ((HttpServletResponse) response).sendRedirect(client.getRESTClient().getLoginURL().toExternalForm());
+
+            URL mangled = mangleUrl(client.getRESTClient().getLoginURL(), ImmutableMap.of("Realm", service.getUniqueRealmIdentifier()));
+
+            ((HttpServletResponse) response).sendRedirect(mangled.toExternalForm());
+
             httpRequest.getSession().setAttribute("client", client);
         } else if (CALL_BACK_PATH.equals(httpRequest.getRequestURI())) {
             // Authentication was successful lets connect to the API
@@ -65,9 +73,9 @@ public class AuthFilter implements Filter {
             try {
                 apiResponse = client.getRESTClient().connect(code);
             } catch (MalformedURLException e) {
-                LOG.error(String.format("Invalid/malformed URL when connecting: %s", e.toString()));
+                log.error(String.format("Invalid/malformed URL when connecting: %s", e.toString()));
             } catch (URISyntaxException e) {
-                LOG.error(String.format("Invalid/malformed URL when connecting: %s", e.toString()));
+                log.error(String.format("Invalid/malformed URL when connecting: %s", e.toString()));
             }
 
             if ((apiResponse == null) || (apiResponse.getStatus() != 200)) {
@@ -75,10 +83,10 @@ public class AuthFilter implements Filter {
             } else {
                 ((HttpServletResponse) response).sendRedirect(afterCallbackRedirect);
             }
-            LOG.info("callback");
+            log.info("callback");
         } else {
             // Assuming authenticated user, process request as necessary.
-            LOG.info("chain");
+            log.info("chain");
             chain.doFilter(request, response);
 
             // Redirect to login on any errors
@@ -87,6 +95,22 @@ public class AuthFilter implements Filter {
             // Possible solution:
             //      authenticate(request, response);
         }
+    }
+
+    private URL mangleUrl(URL url, ImmutableMap<String, String> params) {
+        try {
+            URIBuilder builder = new URIBuilder(url.toURI());
+            for (String key : params.keySet()) {
+                builder.addParameter(key, params.get(key));
+            }
+            URI newUrlEncoded = builder.build();
+            return newUrlEncoded.toURL();
+        } catch (URISyntaxException e) {
+            log.error(String.format("Invalid/malformed URL when trying to mangle: %s", e.toString()));
+        } catch (MalformedURLException e) {
+            log.error(String.format("Invalid/malformed URL when trying to mangle: %s", e.toString()));
+        }
+        return null;
     }
 
     private void handleAPIResponseFailure(Response apiResponse, ServletResponse response) throws IOException {
@@ -121,7 +145,7 @@ public class AuthFilter implements Filter {
 
         try {
             String externalProps = System.getProperty("sli.conf");
-//            LOG.info("Loading properties from: {}", externalProps);
+//            log.info("Loading properties from: {}", externalProps);
             if (externalProps != null) {
                 try {
                     propStream = new FileInputStream(externalProps);

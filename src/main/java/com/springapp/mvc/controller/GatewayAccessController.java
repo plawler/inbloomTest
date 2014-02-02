@@ -5,7 +5,6 @@ import com.springapp.mvc.command.RealmSelection;
 import com.springapp.mvc.dto.Realm;
 import com.springapp.mvc.dto.Service;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
@@ -32,11 +31,11 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 @Controller
-public class RealmController {
+public class GatewayAccessController {
 
-    private static final Logger log = LoggerFactory.getLogger(RealmController.class);
-    private static final String realmsUrl = "http://localhost:8082/oauth_sample/realms"; // get this from properties
-    private static final String idpByRealmUrl = "http://localhost:8082/oauth_sample/dataservices/"; // get this from properties
+    private static final Logger log = LoggerFactory.getLogger(GatewayAccessController.class);
+    private static final String realmsUrl = "http://localhost:9001/gatewaypoc/realms"; // get this from properties
+    private static final String servicesUrl = "http://localhost:9001/gatewaypoc/dataservices/"; // get this from properties
 
     @RequestMapping(value = "/realms", method = RequestMethod.GET)
     public String getRealms(ModelMap model) {
@@ -49,10 +48,9 @@ public class RealmController {
     public String selectRealm(@ModelAttribute RealmSelection selection, HttpServletRequest request,
                             HttpServletResponse response) throws ServletException, IOException {
         log.info("Realm selected is: " + selection.getRealmIdentifier());
-        // todo: implement dynamic idp endppint lookup and redirect to authenticating address
         RestTemplate rt = new RestTemplate();
-        String result = rt.getForObject(idpByRealmUrl + selection.getRealmIdentifier(), String.class);
-        request.getSession().setAttribute("apiUrl", getService(result).getUrl());
+        String result = rt.getForObject(servicesUrl + selection.getRealmIdentifier(), String.class);
+        request.getSession().setAttribute("service", getService(result));
         return "redirect:/";
     }
 
