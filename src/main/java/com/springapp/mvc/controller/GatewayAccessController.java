@@ -9,6 +9,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -18,7 +19,6 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -34,8 +34,12 @@ import java.util.List;
 public class GatewayAccessController {
 
     private static final Logger log = LoggerFactory.getLogger(GatewayAccessController.class);
-    private static final String realmsUrl = "http://localhost:9001/gatewaypoc/realms"; // get this from properties
-    private static final String servicesUrl = "http://localhost:9001/gatewaypoc/dataservices/"; // get this from properties
+
+    @Value("${realmsEndpoint}")
+    private String realmsUrl;
+
+    @Value("${servicesEndpoint}")
+    private String servicesUrl;
 
     @RequestMapping(value = "/realms", method = RequestMethod.GET)
     public String getRealms(ModelMap model) {
@@ -45,8 +49,8 @@ public class GatewayAccessController {
     }
 
     @RequestMapping(value = "/realms", method = RequestMethod.POST)
-    public String selectRealm(@ModelAttribute RealmSelection selection, HttpServletRequest request,
-                            HttpServletResponse response) throws ServletException, IOException {
+    public String selectRealm(@ModelAttribute RealmSelection selection, HttpServletRequest request)
+            throws ServletException, IOException {
         log.info("Realm selected is: " + selection.getRealmIdentifier());
         RestTemplate rt = new RestTemplate();
         String result = rt.getForObject(servicesUrl + selection.getRealmIdentifier(), String.class);
@@ -60,7 +64,7 @@ public class GatewayAccessController {
         try {
             return buildRealmMap(result);
         } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
         return null;
     }

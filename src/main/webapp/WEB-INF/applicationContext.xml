@@ -6,4 +6,10 @@
 
     <bean id="gatewayFilter" class="com.springapp.mvc.filter.GatewayFilter" />
 
+    <!--<bean id="propertyConfigurer"-->
+          <!--class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">-->
+        <!--<property name="properties" value="classpath:/config/team.properties" />-->
+    <!--</bean>-->
+
+
 </beans>
